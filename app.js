@@ -61,6 +61,25 @@ const budgetController = (function() {
       return newItem;
     },
 
+    deleteItem: function(type, id) {
+      /* // first create an array of ids
+      const ids = data.allItems[type].map(current => {
+        return current.id;
+      });
+      
+      // then find index of item to delete
+      const index = ids.indexOf(id);
+      
+      if(index !== -1) {
+        data.allItems[type].splice(index, 1)
+      } */
+
+      // my version
+      data.allItems[type] = data.allItems[type].filter(current => {
+        return current.id !== id;
+      })
+    },
+
     calculateBudget: function() {
       // Calculate total income and expenses
       calculateTotal('exp');
@@ -108,7 +127,8 @@ const UIController = (function() {
     budgetLabel: '.budget__value',
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
-    percentageLabel: '.budget__expenses--percentage'
+    percentageLabel: '.budget__expenses--percentage',
+    container: '.container'
   };
 
   return {
@@ -128,7 +148,7 @@ const UIController = (function() {
         element = DOMstrings.incomeContainer;
 
         html = `
-          <div class="item clearfix" id="income-${obj.id}">
+          <div class="item clearfix" id="inc-${obj.id}">
             <div class="item__description">${obj.description}</div>
             <div class="right clearfix">
               <div class="item__value">${obj.value}</div>
@@ -141,7 +161,7 @@ const UIController = (function() {
         element = DOMstrings.expensesContainer;
 
         html = `
-          <div class="item clearfix" id="expense-${obj.id}">
+          <div class="item clearfix" id="exp-${obj.id}">
             <div class="item__description">${obj.description}</div>
             <div class="right clearfix">
               <div class="item__value">${obj.value}</div>
@@ -153,10 +173,15 @@ const UIController = (function() {
           </div>`;
       }
 
-      // Replace placeholder text with actual data
+      // Replace placeholder text with actual data...I'm using template strings
 
       // Insert the HTML into the DOM
       document.querySelector(element).insertAdjacentHTML('beforeend', html)
+    },
+
+    deleteListItem: function(selectorID) {
+      const el = document.getElementById(selectorID);
+      el.parentNode.removeChild(el);
     },
 
     clearFields: function() {
@@ -210,11 +235,12 @@ const controller = (function(budgetCtrl, UICtrl) {
         ctrlAddItem();
       }
     });
-
     // document.querySelector('#budgetForm').addEventListener('submit', (e) => {
     //   e.preventDefault();
     //   ctrlAddItem();
     // });
+
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
   };
 
   const updateBudget = function () {
@@ -242,6 +268,24 @@ const controller = (function(budgetCtrl, UICtrl) {
       updateBudget();
     }
   };
+
+  const ctrlDeleteItem = function(event) {
+    let splitID, type, ID;
+    const itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+
+    if(itemID) {
+      splitID = itemID.split('-');
+      type = splitID[0];
+      ID = parseInt(splitID[1]);
+
+      // 1. Delete item from data structure
+      budgetCtrl.deleteItem(type, ID);
+      // 2. Delete the item from the UI
+      UICtrl.deleteListItem(itemID);
+      // 3. Update and show the new budget totals
+      updateBudget();
+    }
+  }
 
   return {
     init: function() {
